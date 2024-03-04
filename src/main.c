@@ -1,29 +1,21 @@
-#include <SDL2/SDL.h>
+#include "Jade/Jade.h"
 
 int main(int argc, char* argv[]) {
-    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-        SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
-        return 1;
-    }
+    JadeWindowConfig config = {
+        .width = 640,
+        .height = 480,
+        .x = SDL_WINDOWPOS_UNDEFINED,
+        .y = SDL_WINDOWPOS_UNDEFINED,
+        .title = "Jade Test"
+    };
 
-    SDL_Window* window = SDL_CreateWindow("Jade Test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL_WINDOW_OPENGL);
-
+    JadeWindow* window = JadeSpawnWindow(&config);
     if (window == NULL) {
-        SDL_Log("Unable to create window: %s", SDL_GetError());
+        printf("Failed to create Jade window.\n");
         return 1;
     }
 
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    if (renderer == NULL) {
-        SDL_Log("Unable to create renderer: %s", SDL_GetError());
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return 1;
-    }
-
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderClear(renderer);
-    SDL_RenderPresent(renderer);
+    JadeSetWindowBackground(window, 0, 0, 0);
 
     SDL_Event event;
     int quit = 0;
@@ -35,10 +27,9 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
+    free(window->config_ptr);
+    free(window);
     SDL_Quit();
 
     return 0;
 }
-

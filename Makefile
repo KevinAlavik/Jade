@@ -1,5 +1,5 @@
-CC ?= gcc
-CFLAGS := -std=c99 -Wall -pedantic -Werror -Wshadow -Wstrict-aliasing -Wstrict-overflow -O3
+CC ?= clang
+CFLAGS := -std=c99 -Wall -Werror -O3
 CFLAGS += $(shell pkg-config sdl2 --cflags)
 LDFLAGS := $(shell pkg-config sdl2 --libs)
 
@@ -11,8 +11,9 @@ DESTDIR ?= /usr/local/bin
 TARGET_NAME := jade-test
 TARGET := $(BIN_DIR)/$(TARGET_NAME)
 
-SRC := $(foreach x, $(SRC_DIR), $(wildcard $(addprefix $(x)/*,.c*)))
-OBJ := $(addprefix $(OBJ_DIR)/, $(addsuffix .o, $(notdir $(basename $(SRC)))))
+SRC := $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/Jade/*.c)
+OBJ := $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRC))
+DEP := $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.d, $(SRC))
 
 .PHONY: all
 all: $(TARGET)
@@ -20,12 +21,14 @@ all: $(TARGET)
 $(TARGET): $(OBJ)
 	@mkdir -p $(@D)
 	@printf "  LD $(notdir $@)\n"
-	@$(CC) $(LDFLAGS) $(OBJ) -o $@
+	@$(CC) $(LDFLAGS) $^ -o $@
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(@D)
 	@printf "  CC $<\n"
-	@$(CC) $(CFLAGS) -c $< -o $@
+	@$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
+
+-include $(DEP)
 
 .PHONY: install
 install: $(TARGET)
@@ -33,8 +36,8 @@ install: $(TARGET)
 
 .PHONY: format
 format:
-	@clang-format -i $(shell find src -name "*.c" -o -name "*.h")
+	@clang-format -i $(SRC)
 
 .PHONY: clean
 clean:
-	@rm -rf $(BIN_DIR) $(BUILD_DIR) $(OBJ_DIR)
+	@rm -rf $(BIN_DIR) $(OBJ_DIR)
